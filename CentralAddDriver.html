@@ -233,6 +233,7 @@
                   <option value="">--None--</option>
                   <option value="Operator">Operator</option>
                   <option value="Learner Permit">Learner Permit</option>
+                  <option value="Learner Permit">Not Licensed</option>
                </select>
             </div>
             <!-- Learners Permit Date (Hidden by default) -->
@@ -503,15 +504,15 @@
             name="Debug_Notes__c"
             value="Safeco Test: 2025-06-27 07:21AM"
             />
-          <input type="hidden" name="debug" value=1>                            
-         <input type="hidden" name="debugEmail" value="annie.rawal@caeliusconsulting.com"> 
+      <!--    <input type="hidden" name="debug" value=1>                            
+         <input type="hidden" name="debugEmail" value="annie.rawal@caeliusconsulting.com"> -->
          <!-- Review and Submit Button -->
          <div class="flex justify-end mt-6">
             <input
                type="submit"
                class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-blue-700 transition"
                name="submit"
-               value="Review and Submit"
+               value="Submit"
                >
          </div>
       </form>
@@ -549,88 +550,134 @@
       <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
       <script>
          document.addEventListener("DOMContentLoaded", function () {
-             const form = document.getElementById("mainForm");
-         
-             // Update Salesforce hidden fields when radio changes
-             document.querySelectorAll('input[name="requestType"]').forEach(radio => {
-                 radio.addEventListener('change', function() {
-                     document.getElementById("sfQuote").value = this.value === "Quote" ? "true" : "false";
-                     document.getElementById("sfEndorsement").value = this.value === "Endorsement" ? "true" : "false";
-                 });
-             });
-         
-             // Date pickers
-             const dateFields = ["00NU7000005zuLl", "00NU7000005zuSD", "00NU7000007CwPB", "00NU7000007Cw93"];
-             dateFields.forEach(id => {
-                 new Pikaday({
-                     field: document.getElementById(id),
-                     format: "MM/DD/YYYY",
-                     toString(date) {
-                         const day = String(date.getDate()).padStart(2, "0");
-                         const month = String(date.getMonth() + 1).padStart(2, "0");
-                         const year = date.getFullYear();
-                         return `${month}/${day}/${year}`;
-                     },
-                     parse(dateString) {
-                         const [month, day, year] = dateString.split("/");
-                         return new Date(year, month - 1, day);
-                     }
-                 });
-             });
-         
-             // Learner Permit field toggle
-             const driverInformation = document.getElementById("00NU7000007CvbC");
-             const learnersPermitField = document.getElementById("LearnersPermitDateField");
-             const learnerInput = learnersPermitField.querySelector("input");
-             driverInformation.addEventListener("change", function () {
-                 if (this.value === "Learner Permit") {
-                     learnersPermitField.classList.remove("hidden");
-                     learnerInput.required = true;
-                     learnerInput.disabled = false;
-                 } else {
-                     learnersPermitField.classList.add("hidden");
-                     learnerInput.required = false;
-                     learnerInput.disabled = true;
-                     learnerInput.value = "";
-                 }
-             });
-         
-             // Co-Applicant field toggle
-             const coApplicantDetails = document.getElementById("CoApplicantDetails");
-             const maritalStatus = document.getElementById("00NU7000007Cw4D");
-             const relationshipToInsured = document.getElementById("00NU7000007Cw0z");
-         
-             function toggleCoApplicant() {
-                 if (maritalStatus.value === "Married" && relationshipToInsured.value === "Spouse") {
-                     coApplicantDetails.classList.remove("hidden");
-                     coApplicantDetails.querySelectorAll("input, select, textarea").forEach(el => {
-                         el.required = true;
-                         el.disabled = false;
-                     });
-                 } else {
-                     coApplicantDetails.classList.add("hidden");
-                     coApplicantDetails.querySelectorAll("input, select, textarea").forEach(el => {
-                         el.required = false;
-                         el.disabled = true;
-                         el.value = "";
-                     });
-                 }
-             }
-         
-             maritalStatus.addEventListener("change", toggleCoApplicant);
-             relationshipToInsured.addEventListener("change", toggleCoApplicant);
-         
-             // **Disable hidden required fields right before submit**
-             form.addEventListener("submit", function () {
-                 // Learner Permit
-                 learnerInput.disabled = learnersPermitField.classList.contains("hidden");
-         
-                 // Co-Applicant
-                 coApplicantDetails.querySelectorAll("input, select, textarea").forEach(el => {
-                     el.disabled = coApplicantDetails.classList.contains("hidden");
-                 });
-             });
-         });
+  const form = document.getElementById("mainForm");
+
+  // Update Salesforce hidden fields when radio changes
+  document.querySelectorAll('input[name="requestType"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      document.getElementById("sfQuote").value = this.value === "Quote" ? "true" : "false";
+      document.getElementById("sfEndorsement").value = this.value === "Endorsement" ? "true" : "false";
+    });
+  });
+
+  // Date pickers
+  const dateFields = ["00NU7000005zuLl", "00NU7000005zuSD", "00NU7000007CwPB", "00NU7000007Cw93"];
+  dateFields.forEach(id => {
+    new Pikaday({
+      field: document.getElementById(id),
+      format: "MM/DD/YYYY",
+      toString(date) {
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+      },
+      parse(dateString) {
+        const [month, day, year] = dateString.split("/");
+        return new Date(year, month - 1, day);
+      }
+    });
+  });
+
+  // Learner Permit and License fields toggling
+  const driverInformation = document.getElementById("00NU7000007CvbC");
+  const learnersPermitField = document.getElementById("LearnersPermitDateField");
+  const learnerInput = learnersPermitField.querySelector("input");
+  const licenseStateField = document.getElementById("00NU7000007CwFV");
+  const licenseNumberField = document.getElementById("00NU7000005zuK9");
+
+  // Fix duplicate option for "Not Licensed"
+  const options = driverInformation.querySelectorAll("option");
+  options.forEach(option => {
+    if (option.value === "Learner Permit" && option.textContent.trim() === "Not Licensed") {
+      option.value = "Not Licensed";
+    }
+  });
+
+  driverInformation.addEventListener("change", function () {
+    if (this.value === "Learner Permit") {
+      learnersPermitField.classList.remove("hidden");
+      learnerInput.required = true;
+      learnerInput.disabled = false;
+
+      licenseStateField.parentElement.classList.remove("hidden");
+      licenseNumberField.parentElement.classList.remove("hidden");
+      licenseStateField.required = true;
+      licenseStateField.disabled = false;
+      licenseNumberField.required = true;
+      licenseNumberField.disabled = false;
+    } else if (this.value === "Not Licensed") {
+      learnersPermitField.classList.add("hidden");
+      learnerInput.required = false;
+      learnerInput.disabled = true;
+      learnerInput.value = "";
+
+      licenseStateField.parentElement.classList.add("hidden");
+      licenseNumberField.parentElement.classList.add("hidden");
+      licenseStateField.required = false;
+      licenseStateField.disabled = true;
+      licenseNumberField.required = false;
+      licenseNumberField.disabled = true;
+      licenseStateField.value = "";
+      licenseNumberField.value = "";
+    } else {
+      learnersPermitField.classList.add("hidden");
+      learnerInput.required = false;
+      learnerInput.disabled = true;
+      learnerInput.value = "";
+
+      licenseStateField.parentElement.classList.remove("hidden");
+      licenseNumberField.parentElement.classList.remove("hidden");
+      licenseStateField.required = true;
+      licenseStateField.disabled = false;
+      licenseNumberField.required = true;
+      licenseNumberField.disabled = false;
+    }
+  });
+
+  // Co-Applicant field toggle
+  const coApplicantDetails = document.getElementById("CoApplicantDetails");
+  const maritalStatus = document.getElementById("00NU7000007Cw4D");
+  const relationshipToInsured = document.getElementById("00NU7000007Cw0z");
+
+  function toggleCoApplicant() {
+    if (maritalStatus.value === "Married" && relationshipToInsured.value === "Spouse") {
+      coApplicantDetails.classList.remove("hidden");
+      coApplicantDetails.querySelectorAll("input, select, textarea").forEach(el => {
+        el.required = true;
+        el.disabled = false;
+      });
+    } else {
+      coApplicantDetails.classList.add("hidden");
+      coApplicantDetails.querySelectorAll("input, select, textarea").forEach(el => {
+        el.required = false;
+        el.disabled = true;
+        el.value = "";
+      });
+    }
+  }
+
+  maritalStatus.addEventListener("change", toggleCoApplicant);
+  relationshipToInsured.addEventListener("change", toggleCoApplicant);
+
+  // Disable hidden required fields right before submit
+  form.addEventListener("submit", function () {
+    learnerInput.disabled = learnersPermitField.classList.contains("hidden");
+
+    coApplicantDetails.querySelectorAll("input, select, textarea").forEach(el => {
+      el.disabled = coApplicantDetails.classList.contains("hidden");
+    });
+
+    // Disable license fields if hidden to allow form submit
+    if (licenseStateField.parentElement.classList.contains("hidden")) {
+      licenseStateField.disabled = true;
+    }
+    if (licenseNumberField.parentElement.classList.contains("hidden")) {
+      licenseNumberField.disabled = true;
+    }
+  });
+});
+
       </script>
    </body>
 </html>
