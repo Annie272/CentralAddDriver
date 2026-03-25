@@ -358,6 +358,9 @@
                name="Policy_Action__c"
                value="Add Driver"
                />
+
+              
+               <input type="hidden" id="allFormData" name="All_Form_Data__c" value="" />
             <!-- Additional Remarks (conditionally shown) -->
            <!-- <div class="mb-3 hidden" id="additionalRemarksDiv">
                <label for="additionalRemarks" class="block text-sm font-medium text-gray-700">
@@ -592,6 +595,11 @@
       });
     }
   });
+  function formatDateToISO(dateStr) {
+  if (!dateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return "";
+  const [month, day, year] = dateStr.split("/");
+  return `${year}-${month}-${day}`;
+}
 
   // Fix duplicate option for 'Not Licensed' if any (optional cleanup)
   const licenseOptions = driverInformation.querySelectorAll("option");
@@ -792,6 +800,51 @@ if (formMissingHidden) {
       dialogTitle.textContent = "All mandatory fields are completed. Ready to submit your request?";
       missingFieldsList.innerHTML = "";
     }
+
+
+// Build All_Form_Data__c JSON (ONLY visible + enabled fields)
+const allFormData = {
+  Email: document.getElementById("email")?.value || "",
+  Is_this_a_quote_or_a_change_request:
+    getRequestType() === "Quote" ? "Y" : "N",
+
+  Policy_Number: document.getElementById("00NU7000005zuX3")?.value || "",
+  Effective_Date: formatDateToISO(document.getElementById("00NU7000005zuLl")?.value),
+
+  First_Name: document.getElementById("00NU7000005zuOz")?.value || "",
+  Last_Name: document.getElementById("00NU7000005zuQb")?.value || "",
+  Date_of_Birth: formatDateToISO(document.getElementById("00NU7000005zuSD")?.value),
+
+  Gender: document.getElementById("00NU7000005zqRr")?.value || "",
+  Relationship_To_Insured: document.getElementById("00NU7000007Cw0z")?.value || "",
+  Marital_Status: document.getElementById("00NU7000007Cw4D")?.value || "",
+
+  Driver_Information: document.getElementById("00NU7000007CvbC")?.value || "",
+  Learners_Permit_Date: formatDateToISO(document.getElementById("00NU7000007Cw93")?.value),
+
+  License_State: document.getElementById("00NU7000007CwFV")?.value || "",
+  Drivers_License_Number: document.getElementById("00NU7000005zuK9")?.value || ""
+};
+
+// ✅ Include Co-Applicant ONLY if visible
+if (!document.getElementById("CoApplicantDetails").classList.contains("hidden")) {
+  allFormData.Co_Applicant_First_Name = document.getElementById("00NU7000007CwKL")?.value || "";
+  allFormData.Co_Applicant_Last_Name = document.getElementById("00NU7000007CwLx")?.value || "";
+  allFormData.Reason_for_adding_co_applicant = document.getElementById("00NU7000007CwNZ")?.value || "";
+  allFormData.Co_Applicant_Date_of_Birth = formatDateToISO(document.getElementById("00NU7000007CwPB")?.value);
+  allFormData.Co_Applicant_Occupation = document.getElementById("00NU7000007CwYr")?.value || "";
+  allFormData.Co_Applicant_Marital_Status = document.getElementById("00NU7000007CwXF")?.value || "";
+}
+
+// ✅ ALWAYS include hidden explicit fields
+allFormData.Carrier = "Central Insurance";
+allFormData.Policy_Action = document.getElementById("AddDriver")?.value || "";
+
+// ✅ Store pretty JSON
+document.getElementById("allFormData").value =
+  JSON.stringify(allFormData)
+    .replace(/\s+/g, ''); // remove spaces
+
 
     dialog.classList.remove("hidden");
     proceedBtn.classList.remove("hidden");
