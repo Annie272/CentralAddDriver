@@ -841,9 +841,8 @@ allFormData.Carrier = "Central Insurance";
 allFormData.Policy_Action = document.getElementById("AddDriver")?.value || "";
 
 // ✅ Store pretty JSON
-document.getElementById("allFormData").value =
-  JSON.stringify(allFormData)
-    .replace(/\s+/g, ''); // remove spaces
+document.getElementById("allFormData").value = JSON.stringify(allFormData);
+ // remove spaces
 
 
     dialog.classList.remove("hidden");
